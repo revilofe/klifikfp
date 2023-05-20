@@ -1,18 +1,14 @@
 package com.klifikt.models
 
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicInteger
+import org.jetbrains.exposed.sql.*
 
-class Module private constructor(val id: Int, var idModule: String, var title: String, var description: String) {
-    companion object {
-        private val idCounter = AtomicInteger()
+data class Module(val id: Int, val idModule: String, val title: String, val description: String)
 
-        fun newEntry(idModule: String, title: String, description: String) = Module(idCounter.getAndIncrement(), idModule, title, description)
-    }
+object Modules : Table() {
+    val id = integer("id").autoIncrement()
+    val idModule = varchar("idModule", 12)
+    val title = varchar("title", 128)
+    val description = varchar("description", 1024)
+
+    override val primaryKey = PrimaryKey(id)
 }
-
-val modules = mutableListOf(Module.newEntry(
-    "PR456",
-    "Programación",
-    "Programación, lenguajes de programación, etc."
-))

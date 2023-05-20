@@ -1,7 +1,6 @@
 package com.klifikt.plugins
 
-import com.klifikt.models.Module
-import com.klifikt.models.modules
+import com.klifikt.dao.daoModule
 import io.ktor.server.application.*
 import io.ktor.server.freemarker.*
 import io.ktor.server.request.*
@@ -16,7 +15,7 @@ fun Application.configureRouting() {
         }
         route("modules") {
             get {
-                call.respond(FreeMarkerContent("index.ftl", mapOf("modules" to modules)))
+                call.respond(FreeMarkerContent("index.ftl", mapOf("modules" to daoModule.allModules())))
             }
             get("new") {
                 call.respond(FreeMarkerContent("new.ftl", model = null))
@@ -26,36 +25,32 @@ fun Application.configureRouting() {
                 val idModule = formParameters.getOrFail("idModule")
                 val title = formParameters.getOrFail("title")
                 val description = formParameters.getOrFail("description")
-                val newEntry = Module.newEntry(idModule, title, description)
+                val newEntry = daoModule.addNewModule(idModule, title, description)
 
-                modules.add(newEntry)
-                call.respondRedirect("/modules/${newEntry.id}")
+                call.respondRedirect("/modules/${newEntry?.id}")
             }
             get("{id}") {
                 val id = call.parameters.getOrFail<Int>("id").toInt()
-                call.respond(FreeMarkerContent("show.ftl", mapOf("module" to modules.find { it.id == id })))
+                call.respond(FreeMarkerContent("show.ftl", mapOf("module" to daoModule.module(id))))
             }
             get("{id}/edit") {
                 val id = call.parameters.getOrFail<Int>("id").toInt()
-                call.respond(FreeMarkerContent("edit.ftl", mapOf("module" to modules.find { it.id == id })))
+                call.respond(FreeMarkerContent("edit.ftl", mapOf("module" to daoModule.module(id))))
             }
             post("{id}") {
                 val id = call.parameters.getOrFail<Int>("id").toInt()
                 val formParameters = call.receiveParameters()
                 when (formParameters.getOrFail("_action")) {
                     "update" -> {
-                        val index = modules.indexOf(modules.find { it.id == id })
                         val idModule = formParameters.getOrFail("idModule")
                         val title = formParameters.getOrFail("title")
-                        val body = formParameters.getOrFail("description")
-                        modules[index].idModule = idModule
-                        modules[index].title = title
-                        modules[index].description = body
+                        val description = formParameters.getOrFail("description")
+                        daoModule.editModule(id, idModule, title, description)
                         call.respondRedirect("/modules/$id")
                     }
 
                     "delete" -> {
-                        modules.removeIf { it.id == id }
+                        daoModule.deleteModule(id)
                         call.respondRedirect("/modules")
                     }
                 }
